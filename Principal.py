@@ -1,5 +1,6 @@
 import csv
 import math
+import sys
 
 def copiar_lista_instancias(lista):
     nova_lista = []
@@ -32,6 +33,7 @@ class KNN:
             self.cpy_lista_instancias = copiar_lista_instancias(self.lista_instancias)
             self.classificar(nova_instancia)
         self.imprimir_matriz_confusao()
+        self.calcular_metricas()
 
     def ler_arquivo(self, caminho):
         arquivo  = open(caminho)
@@ -112,15 +114,73 @@ class KNN:
 
     def imprimir_matriz_confusao(self):
         print("Matriz de confusao (k = "+str(self.k)+")")
+        print()
         for linha in range(3):
             print(self.tipos[linha].ljust(30, " "), self.matriz_confusao[linha])
+        print()
+
+    def calcular_metricas(self):
+        tam = len(self.tipos)
+        for pos in range(tam):
+            print(self.tipos[pos])
+            coeficientes = self.calcular_coeficientes(pos)
+            a = coeficientes["a"]
+            b = coeficientes["b"]
+            c = coeficientes["c"]
+            d = coeficientes["d"]
+            print("    Acuracia =", self.acuracia(a, b, c, d))
+            print("    Taxa de verdadeiros positivos =", self.vp(a, b, c, d))
+            print("    Taxa de falsos positivos =", self.fp(a, b, c, d))
+            print("    Taxa de verdadeiros negativos =", self.vn(a, b, c, d))
+            print("    Taxa de falsos negativos =", self.fn(a, b, c, d))
+            print("    Precisao =", self.precisao(a, b, c, d))
+            print("    F-score =", self.f_score(a, b, c, d))
+            print()
+
+    def calcular_coeficientes(self, pos):
+        tam = len(self.tipos)
+        coeficientes = {"a":0, "b":0, "c":0, "d":0}
+        coord = {"i":pos, "j":pos}
+        for i in range(tam):
+            for j in range(tam):
+                if i==j:
+                    if i==coord["i"] and j==coord["j"]:
+                        coeficientes["a"] = self.matriz_confusao[i][j]
+                    else:
+                        coeficientes["d"] += self.matriz_confusao[i][j]
+                else:
+                    if i==coord["i"] and j!=coord["j"]:
+                        coeficientes["b"] += self.matriz_confusao[i][j]
+                    elif i!=coord["i"] and j==coord["j"]:
+                        coeficientes["c"] += self.matriz_confusao[i][j]
+        return coeficientes
+
+    def acuracia(self, a, b, c, d):
+        return round((a+b)/(a+b+c+d), 2)
+
+    def vp(self, a, b, c, d):
+        return round((d)/(c+d), 2)
+
+    def fp(self, a, b, c, d):
+        return round((b)/(a+b), 2)
+
+    def vn(self, a, b, c, d):
+        return round((a)/(a+b), 2)
+
+    def fn(self, a, b, c, d):
+        return round((c)/(c+d), 2)
+
+    def precisao(self, a, b, c, d):
+        return round((d)/(b+d), 2)
+
+    def f_score(self, a, b, c, d):
+        recall = self.vp(a, b, c, d)
+        precisao = self.precisao(a, b, c, d)
+        return round(2*(recall*precisao)/(recall+precisao), 2)
+
 
 #-------------------------------------------------------------------------------
 
-knn = KNN(1)
-print()
-knn = KNN(3)
-print()
-knn = KNN(5)
-print()
-knn = KNN(7)
+knn = KNN(int(sys.argv[1]))
+
+#
